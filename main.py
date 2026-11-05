@@ -1,3 +1,5 @@
+import random
+
 # Klasa planszy
 class Plansza:
     # Inicjalizacja obiektu planszy
@@ -29,47 +31,58 @@ class Plansza:
             raise StopIteration
 
     # Znajdowanie konfliktów na planszy
-    def czy_poprawne(self):
-        n = len(self.krolowe)
+    def is_proper(self, setup):
+        n = len(setup)
         for i in range(n):
             for j in range(i + 1, n):
-                kolumna_i = self.krolowe[i]
-                kolumna_j = self.krolowe[j]
+                kolumna_i = setup[i]
+                kolumna_j = setup[j]
 
                 if kolumna_i == kolumna_j:
                     return False
 
                 if abs(i - j) == abs(kolumna_i - kolumna_j):
+                    print("Konflikt kolumny: " + str(kolumna_i) + " - " + str(kolumna_j))
                     return False
         return True
+
+    def attempt_generation(self):
+        approved_cache = []
+        tryout_cache = []
+        for row in range(7):
+            print("\n\n\n\n")
+            available_cells = [0,1,2,3,4,5,6,7]
+            for used in approved_cache:
+                available_cells.remove(used)
+            print("stan dostępnych miejsc przed pętlą: " + str(available_cells))
+            print("zatwierdzona częściowa plansza: " + str(approved_cache   ))
+
+            for chance in range(len(available_cells)):
+                candidate_cell = available_cells[random.randint(0, len(available_cells)-1)]
+                print(str(candidate_cell))
+                tryout_cache.append(candidate_cell)
+                result = self.is_proper(tryout_cache)
+                available_cells.remove(candidate_cell)
+
+
+                if result == True:
+                    approved_cache = tryout_cache
+                    tryout_cache = approved_cache.copy()
+                    print("wiersz poprawnie wygenerowany")
+                    break
+                tryout_cache = approved_cache.copy()
+                print("\n")
+            else:
+                print("Niepowodzenie w generowaniu planszy")
+                return
+
+        self.krolowe = tuple(approved_cache)
+        print("Plansza poprawnie wygenerowana")
 
 # Wyświetlenie położenia wszystkich królowych danego obiektu planszy
 def iter(plansza):
     for i in plansza:
         print(i)
-# Testy
 
-p1 = Plansza((1,3,0))
-print(p1)
-print("Długość: " +  str(len(p1)))
-print("test konfliktu planszy, brak konfliktów: " + str(p1.czy_poprawne()))
-print("\n")
-
-p2 = Plansza((1,1,0))
-print(p2)
-print("test konfliktu planszy, brak konfliktów: " + str(p2.czy_poprawne()))
-print("\n")
-
-p3 = Plansza((1,2,3))
-print(p3)
-print("test konfliktu planszy, brak konfliktów: " + str(p3.czy_poprawne()))
-print("\n")
-
-p4 = Plansza(())
-print(p4)
-print("Długość: " +  str(len(p4)))
-print("test konfliktu planszy, brak konfliktów: " + str(p4.czy_poprawne()))
-print("\n")
-
-print("Test funkcji iter()")
-iter(p1)
+p1 = Plansza(())
+p1.attempt_generation()
