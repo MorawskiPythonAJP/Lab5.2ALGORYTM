@@ -42,47 +42,63 @@ class Plansza:
                     return False
 
                 if abs(i - j) == abs(kolumna_i - kolumna_j):
-                    print("Konflikt kolumny: " + str(kolumna_i) + " - " + str(kolumna_j))
+                    #print("Konflikt kolumny: " + str(kolumna_i) + " - " + str(kolumna_j))
                     return False
         return True
 
+    # Pojedyńcza próba wygenerowania poprawnej planszy
     def attempt_generation(self):
         approved_cache = []
         tryout_cache = []
-        for row in range(7):
-            print("\n\n\n\n")
+        for row in range(8):
+            #print("\n\n\n\n")
+            #print("Wiersz: " + str(row))
             available_cells = [0,1,2,3,4,5,6,7]
             for used in approved_cache:
                 available_cells.remove(used)
-            print("stan dostępnych miejsc przed pętlą: " + str(available_cells))
-            print("zatwierdzona częściowa plansza: " + str(approved_cache   ))
+            #print("stan dostępnych miejsc przed pętlą: " + str(available_cells))
+            #print("zatwierdzona częściowa plansza: " + str(approved_cache   ))
 
             for chance in range(len(available_cells)):
                 candidate_cell = available_cells[random.randint(0, len(available_cells)-1)]
-                print(str(candidate_cell))
+                #print(str(candidate_cell))
                 tryout_cache.append(candidate_cell)
                 result = self.is_proper(tryout_cache)
                 available_cells.remove(candidate_cell)
 
 
-                if result == True:
+                if result:
                     approved_cache = tryout_cache
                     tryout_cache = approved_cache.copy()
-                    print("wiersz poprawnie wygenerowany")
+                    #print("wiersz poprawnie wygenerowany")
                     break
                 tryout_cache = approved_cache.copy()
-                print("\n")
+                #print("\n")
             else:
-                print("Niepowodzenie w generowaniu planszy")
+                #print("Niepowodzenie w generowaniu planszy")
+                self.krolowe = ()
                 return
 
         self.krolowe = tuple(approved_cache)
-        print("Plansza poprawnie wygenerowana")
+        #print("Plansza poprawnie wygenerowana")
 
-# Wyświetlenie położenia wszystkich królowych danego obiektu planszy
-def iter(plansza):
-    for i in plansza:
-        print(i)
+    def generator_wrapper(self):
+        while True:
+            yield self.attempt_generation()
 
-p1 = Plansza(())
+
+    # Wyświetlenie położenia wszystkich królowych danego obiektu planszy
+    def iter_display(self):
+        for i in self.krolowe:
+            display_row = ""
+            for x in range(i):
+                display_row += "."
+            display_row += "Q"
+            for x in range(7 - i):
+                display_row += "."
+            print(display_row)
+
+p1 = Plansza((3,5,2,4,7,6,1,0))
+
+p1.iter_display()
 p1.attempt_generation()
