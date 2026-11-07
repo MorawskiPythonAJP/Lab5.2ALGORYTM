@@ -31,12 +31,12 @@ class Plansza:
             raise StopIteration
 
     # Znajdowanie konfliktów na planszy
-    def is_proper(self, setup):
-        n = len(setup)
+    def is_proper(self):
+        n = len(self.krolowe)
         for i in range(n):
             for j in range(i + 1, n):
-                kolumna_i = setup[i]
-                kolumna_j = setup[j]
+                kolumna_i = self.krolowe[i]
+                kolumna_j = self.krolowe[j]
 
                 if kolumna_i == kolumna_j:
                     return False
@@ -46,59 +46,93 @@ class Plansza:
                     return False
         return True
 
+    # Funkcja generator losująca i sprawdzająca wolne miejsca w danym rzędzie
+    def candidate_generator(self, available_cells, safe_cache):
+        while len(available_cells) > 0:
+            #print("pozostało miejsc:" + str(len(available_cells)))
+            candidate_cell = available_cells[random.randint(0, len(available_cells) - 1)]
+            self.krolowe.append(candidate_cell)
+            available_cells.remove(candidate_cell)
+            result = self.is_proper()
+
+            if result:
+                safe_cache = self.krolowe.copy()
+                #print("out suc" + str(safe_cache))
+                yield True, safe_cache
+            else:
+                self.krolowe = safe_cache.copy()
+                #print("in cont" + str(safe_cache))
+                yield from self.candidate_generator(available_cells, safe_cache)
+        else:
+            #print("f")
+            yield False, safe_cache
+
     # Pojedyńcza próba wygenerowania poprawnej planszy
     def attempt_generation(self):
-        approved_cache = []
-        tryout_cache = []
+        self.krolowe = []
+        safe_cache = []
         for row in range(8):
-            #print("\n\n\n\n")
-            #print("Wiersz: " + str(row))
+            #print("row " + str(row))
             available_cells = [0,1,2,3,4,5,6,7]
-            for used in approved_cache:
+            for used in safe_cache:
                 available_cells.remove(used)
-            #print("stan dostępnych miejsc przed pętlą: " + str(available_cells))
-            #print("zatwierdzona częściowa plansza: " + str(approved_cache   ))
+            #print("pre func " + str(safe_cache))
+            potential_cell, safe_cache = next(self.candidate_generator(available_cells, safe_cache))
+            #print("post func " + str(safe_cache))
 
-            for chance in range(len(available_cells)):
-                candidate_cell = available_cells[random.randint(0, len(available_cells)-1)]
-                #print(str(candidate_cell))
-                tryout_cache.append(candidate_cell)
-                result = self.is_proper(tryout_cache)
-                available_cells.remove(candidate_cell)
-
-
-                if result:
-                    approved_cache = tryout_cache
-                    tryout_cache = approved_cache.copy()
-                    #print("wiersz poprawnie wygenerowany")
-                    break
-                tryout_cache = approved_cache.copy()
-                #print("\n")
-            else:
+            if not potential_cell:
                 #print("Niepowodzenie w generowaniu planszy")
                 self.krolowe = ()
                 return
+        else:
+            #print("Powodzenie w generowaniu planszy")
+            #self.iter_display()
+            self.krolowe = tuple(self.krolowe)
 
-        self.krolowe = tuple(approved_cache)
-        #print("Plansza poprawnie wygenerowana")
-
-    def generator_wrapper(self):
-        while True:
-            yield self.attempt_generation()
-
+    # Generuje nowe plansze puki nie otrzyma poprawnej
+    def get_correct_board(self):
+        self.attempt_generation()
+        if len(self.krolowe) == 0:
+            self.get_correct_board()
 
     # Wyświetlenie położenia wszystkich królowych danego obiektu planszy
     def iter_display(self):
         for i in self.krolowe:
             display_row = ""
-            for x in range(i):
-                display_row += "."
+            for j in range(i):
+                display_row += "_"
             display_row += "Q"
-            for x in range(7 - i):
-                display_row += "."
+            for j in range(7 - i):
+                display_row += "_"
             print(display_row)
+        print("\n")
 
-p1 = Plansza((3,5,2,4,7,6,1,0))
+# Wygenerowanie wszystkich możliwych poprawnych plansz
+def get_all_correct_boards():
+    c_boards = list()
+    while len(c_boards) < 92:
+        px = Plansza(())
+        px.get_correct_board()
+        for j in c_boards:
+            if px.krolowe == j.krolowe:
+                break
+        else:
+            c_boards.append(px)
 
-p1.iter_display()
-p1.attempt_generation()
+            #Odkomentować, by wyświetlić graficznie wszystkie 92 plansze
+            #px.iter_display()
+
+    return c_boards
+
+# Nadrzędny wątek
+
+# Ekstrakcja wszystkich 92 możliwych kombinacji królowych na planszy zgodnych z zasadami
+boards = get_all_correct_boards()
+
+print("Trzy przykładowe poprawne plansze")
+for x in range(3):
+    print("Rozwiązanie: " + str(x+1))
+    print(str(boards[x]))
+    boards[x].iter_display()
+
+print("Liczba znalezionych poprawnych planszy: " + str(len(boards)))
